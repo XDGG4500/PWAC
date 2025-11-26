@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Presentaciones - Arquitectura de Computadoras</title>
+  <style>
+    :root{
+      --bg:#F6FBFA;
+      --card:#FFFFFF;
+      --accent:#80C7C7;
+      --muted:#7D8B8B;
+      --glass: rgba(255,255,255,0.6);
+      --shadow: 0 6px 18px rgba(38,50,56,0.06);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#EEF9F8);color:#123;}
+    .wrap{max-width:1100px;margin:36px auto;padding:20px}
+    header{display:flex;gap:16px;align-items:center;justify-content:space-between}
+    h1{font-size:1.4rem;margin:0;color:#0b3b3b}
+    p.lead{margin:4px 0 0;color:var(--muted)}
+
+    .controls{display:flex;gap:12px;align-items:center}
+    .search{padding:10px 12px;border-radius:12px;border:1px solid rgba(16,24,24,0.06);background:var(--glass);min-width:220px}
+    select{padding:9px;border-radius:10px;border:1px solid rgba(16,24,24,0.06);}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:20px}
+    .card{background:var(--card);border-radius:14px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .title{font-weight:600;color:#063a3a}
+    .desc{color:var(--muted);font-size:0.92rem}
+    .tags{display:flex;gap:8px;flex-wrap:wrap}
+    .tag{background:#F0FFFE;padding:6px 8px;border-radius:999px;font-size:0.8rem;color:#0c6565}
+
+    .actions{display:flex;gap:8px}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .btn.view{background:transparent;color:var(--accent);border:1px solid rgba(8,40,40,0.06)}
+    .btn.download{background:var(--accent);color:#043232}
+
+    footer{margin-top:26px;color:var(--muted);font-size:0.9rem}
+
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:28px;z-index:60}
+    .modal.open{display:flex}
+    .modal .backdrop{position:absolute;inset:0;background:rgba(6,10,10,0.45);backdrop-filter:blur(2px)}
+    .modal .panel{position:relative;background:#fff;width:90%;max-width:980px;height:84%;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(5,20,20,0.4);display:flex;flex-direction:column}
+    .modal .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #eef7f7}
+    .modal iframe{flex:1;border:0}
+
+    @media (max-width:520px){.controls{flex-direction:column;align-items:stretch}.search{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Presentaciones — Arquitectura de Computadoras</h1>
+        <p><strong>Nombre del Alumno:</strong> Jose Maria Aguirre Nava</p>
+        <p class="lead">En mi página web de podrá abrir, ver y descargar las 5 presentaciones.</p>
+      </div>
+      <div class="controls">
+        <input id="search" class="search" placeholder="Buscar por título, tema o etiqueta" />
+        <select id="sort">
+          <option value="order">Orden original</option>
+          <option value="title">Ordenar por título (A→Z)</option>
+          <option value="date_desc">Fecha (más reciente)</option>
+          <option value="date_asc">Fecha (más antigua)</option>
+        </select>
+      </div>
+    </header>
+
+    <main>
+      <section id="list" class="grid" aria-live="polite"></section>
+    </main>
+
+    <footer>
+      Mi Página Web - Arquitectura de Computadoras
+    </footer>
+  </div>
+
+  <div id="modal" class="modal" role="dialog" aria-hidden="true">
+    <div class="backdrop" id="backdrop"></div>
+    <div class="panel" role="document">
+      <div class="topbar">
+        <div id="modalTitle" style="font-weight:700"></div>
+        <div style="display:flex;gap:8px">
+          <a id="modalDownload" class="btn download" href="#" download>Descargar</a>
+          <button id="closeModal" class="btn view">Cerrar</button>
+        </div>
+      </div>
+      <iframe id="pdfFrame" title="Vista previa PDF"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const presentations = [
+  { id:1, title:'Arquitectura de Computadoras: Componentes Esenciales y Funcionamiento', desc:'Componentes esenciales, arquitectura general y funcionamiento básico.', date:'2025-09-26', tags:['componentes','funcionamiento'], file:'Arquitectura-de-Computadoras-Componentes-Esenciales-y-Funcionamiento.pdf' },
+  { id:2, title:'Selección de Componentes para Ensamble de Equipo', desc:'Contenido correspondiente a la unidad 3 del curso.', date:'2025-11-08', tags:['unidad 3'], file:'unidad-3.pdf' },
+  { id:3, title:'Ciclo de la Instrucción', desc:'Funcionamiento del ciclo de instrucción de la CPU.', date:'2025-10-17', tags:['CPU','ciclo'], file:'Ciclo de la instruccion.pdf' },
+  { id:4, title:'Estructura y Funcionamiento del CPU', desc:'Elementos internos del CPU y su operación.', date:'2025-10-17', tags:['CPU','estructura'], file:'Estructura y Funcionamiento del CPU.pdf' },
+  { id:5, title:'Sistemas de Entrada y Salida', desc:'Periféricos, buses y manejo de E/S.', date:'2025-09-26', tags:['E/S','periféricos'], file:'Sistemas de entrada y salida.pdf' }
+];
+
+    const listEl = document.getElementById('list');
+    const searchEl = document.getElementById('search');
+    const sortEl = document.getElementById('sort');
+
+    function render(items){
+      listEl.innerHTML = '';
+      items.forEach(p => {
+        const card = document.createElement('article');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="meta">
+            <div>
+              <div class="title">${escapeHtml(p.title)}</div>
+              <div style="font-size:0.85rem;color:var(--muted)">${formatDate(p.date)}</div>
+            </div>
+            <div class="tags">${p.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+          </div>
+          <div class="desc">${escapeHtml(p.desc)}</div>
+          <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:0.85rem;color:var(--muted)">Archivo: ${escapeHtml(p.file)}</div>
+            <div class="actions">
+              <button class="btn view" data-file="${encodeURI(p.file)}" data-title="${escapeHtml(p.title)}">Ver</button>
+              <a class="btn download" href="${encodeURI(p.file)}" download>Descargar</a>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+
+      document.querySelectorAll('.btn.view').forEach(b=>b.addEventListener('click', (e)=>{
+        const file = e.currentTarget.dataset.file;
+        const title = e.currentTarget.dataset.title;
+        openModal(file,title);
+      }));
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;');
+    }
+
+    function openModal(file,title){
+      const modal = document.getElementById('modal');
+      const frame = document.getElementById('pdfFrame');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDownload = document.getElementById('modalDownload');
+      modalTitle.textContent = title;
+      modalDownload.href = file;
+      frame.src = file;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+    }
+
+    function closeModal(){
+      const modal = document.getElementById('modal');
+      const frame = document.getElementById('pdfFrame');
+      frame.src = '';
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+    }
+
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+    document.getElementById('backdrop').addEventListener('click', closeModal);
+
+    function applyFilters(){
+      const q = searchEl.value.trim().toLowerCase();
+      let res = presentations.filter(p=>{
+        if(!q) return true;
+        return (p.title+p.desc+p.tags.join(' ')+p.file).toLowerCase().includes(q);
+      });
+
+      const sort = sortEl.value;
+      if(sort === 'title'){ res.sort((a,b)=>a.title.localeCompare(b.title)); }
+      else if(sort === 'date_desc'){ res.sort((a,b)=> new Date(b.date)-new Date(a.date)); }
+      else if(sort === 'date_asc'){ res.sort((a,b)=> new Date(a.date)-new Date(b.date)); }
+
+
+      render(res);
+    }
+
+    searchEl.addEventListener('input', applyFilters);
+    sortEl.addEventListener('change', applyFilters);
+
+
+    document.addEventListener('DOMContentLoaded', ()=>render(presentations));
+  
+function formatDate(d){
+  const date = new Date(d);
+  const day = String(date.getUTCDate()).padStart(2,'0');
+  const month = String(date.getUTCMonth()+1).padStart(2,'0');
+  const year = date.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
+</script>
+</body>
+</html>
